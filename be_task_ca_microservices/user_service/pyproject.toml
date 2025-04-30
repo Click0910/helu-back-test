@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "user-service"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.85.0"
+sqlalchemy = "^1.4.41"
+psycopg2 = "^2.9.5"
+requests = "^2.28.1"
+shared-contracts = {path = "../shared_contracts", develop = true}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

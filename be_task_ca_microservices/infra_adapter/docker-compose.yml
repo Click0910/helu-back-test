@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  user_service:
+    build: ./user_service
+    ports:
+      - "8000:8000"
+    environment:
+      ITEM_SERVICE_URL: "http://item_service:8001"
+      DATABASE_URL: "postgresql://user:password@user_db/user"
+    depends_on:
+      - rabbitmq
+      - user_db
+
+  item_service:
+    build: ./item_service
+    ports:
+      - "8001:8000"
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      DATABASE_URL: "postgresql://item:password@item_db/item"
+    depends_on:
+      - rabbitmq
+      - item_db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  user_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: user
+
+  item_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: item
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: item
