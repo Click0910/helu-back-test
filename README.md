@@ -157,7 +157,7 @@ be_task_ca/
 
 **Key points:**
 
-* Shared contracts:
+* **_Shared contracts_**:
 Even that the modules (now microservices) are decoupled, they need to communicate with each other. User service will need
 to verify the item availability before adding to the cart for example. Shared_contracts is a dependency that needs to be installed
 in both microservices in this case using poetry (the project use poetry but could be trough pip or any other package manager).
@@ -165,34 +165,34 @@ This shared_contracts contains schemas or events (for a message broker and Sagas
 is not a concrete implementation, is just a contract. Each microservice that install it, needs to implement the contract.
 This is a good practice because it helps to keep the microservices decoupled and easy to test.
 
-* Microservices:
+* **_Microservices_**:
 It was implemented two microservices (user_service and item_service) with the same structure.
 
-* Core business:
-The core business for each microservice are in the folder core/. 
+* **_Core business_**:
+The core business for each microservice are in the folder core/. Here is where the business logic lives, isolated from the external resources.
 
-* Entities: 
+* **_Entities_**: 
 represents pure business logic, agnostic, not depends on anything.
 
-* Use cases:
+* **_Use cases_**:
 For use_cases we cant think in a little orchestrator for all the "steps" that are involved in the use case. For example the use case create user
 implies several steps, like validate the data, create the user in the database, send an email, etc. So we can think that use_cases are orchestrators.
 This use_cases depends on interfaces (contracts) and not of concrete implementations. The contracts are in the folder contracts/.
 
-* Contracts:
+* **_Contracts_**:
 They are interfaces (ABs classes in python). In clean architecture is usually called ports (I prefer contracts to avoid confusion).
 They are the entry points for the core business. The core business should not depend on concrete implementations, but on contracts.
 It's the way that the inner layer (core business) communicates with the outer layer (external resources).
 
-* Adapters:
+* **_Adapters_**:
 The external resources like DB, clients etc. Here is implemented the concrete implementations of the contracts (repositories, clients, etc).
 I decided to call adapters instead of infrastructure to avoid confusion with Infra as a code, terraform, etc.
 
-* Repositories:
+* **_Repositories_**:
 As was mentioned before, the repositories are the concrete implementations of the contracts.
 They are the entry point for the core business to access the data.
 
-* API:
+* **_API_**:
 The API layer is the entry point for the microservice. It should not depend on the core business, but on the contracts.\.
 
 
@@ -202,14 +202,14 @@ As we can see I decided to implement a Saga Pattern but also a Http client for t
 
 **Why a saga pattern?**
 The reason of the saga is that I assume that these two microservices are going to be used in a bigger system, for example use another service
-to process payments or a service to create orders etc. So we need to ensure integrity of the data. If something is wrong, be able to validate which service failed 
+to process payments, a service to create orders etc. So we need to ensure integrity of the data. If something is wrong, be able to validate which service failed 
 and rollback the changes, gives a compensation etc.
 
 **Why a Http client?**
 The reason for the Http client (could be using httpx or request whatever you prefer) is because for a better experience I think a fast 
 and synchron consult for the item availability is better than a message broker.
 
-## Sequence of a Saga in Add to cart item:
+**_Sequence of a Saga in Add to cart item:_**
 
 ```mermaid
 sequenceDiagram
@@ -247,7 +247,7 @@ sequenceDiagram
     end
 ```
 
-## Saga state machine:
+**_Saga state machine:_**
 ```mermaid
 
 stateDiagram-v2
@@ -267,8 +267,10 @@ stateDiagram-v2
 
 ```
 
-But the beauty of this clean architecture is that you can choose the best approach for your needs. At the beginning we can decided only use an http client, but latter migrate to a message brker.
-And you only "disconnect" the client and "connect" the Message broker implemented the interface.
+But the beauty of this clean architecture is that you can choose the best approach for your needs. At the beginning we can decided only use a http client, but latter migrate to a message broker.
+And you only "disconnect" the client and "connect" the Message broker implemented the interface. 
+Or for example, probably a saga is already implemented and handled by an orchestrator (like AWS Step Functions or Temporal.io),
+so will not be needed to use this saga pattern. Easily we can remove the message broker and use the orchestrator without modifying the core business.
 
 ## Independent DataBases:
 
@@ -296,13 +298,26 @@ As Was mentioned in the prev Point, the idea is to make the dependencies between
 I decided to make the architecture for both microservices in a monorepo for simplicity, but in a real world example we can have two different repositories for each microservice.
 
 The shared contracts is a dependency that needs to be installed in both microservices in this case using poetry (the project use poetry but could be trough pip or any other package manager).
+Basically the idea of the shared_contracts is explicit says what the microservices can expect from each other.
+
+In this case, user knows what data will fetch from item service and item service knows what data will be sent to user service.
+
+Finally, as was mentioned before, the shared_contracts contains schemas or events (for a message broker and Sagas) and each microservice that install it, needs to implement the contract.
+
+
+---------------------------------------------
+
+**_Remarks:_**
+
+This is my proposal for split this project into two microservices and refactor it to stick to the clean architecture.
+The code provided is just the initial skeleton for a  naive implementation for  a simple shop system, but I think is a 
+good starting point to understand the clean architecture and how to implement it in python. The code for sure needs to be completed.
+improved and refactored (for example making it more granular or with static type enforcement for mypy validation), 
+but I think is a good starting point to understand the clean architecture and how to implement it in python.
+
+I mainly focused on the architecture and the design of the microservices.
 
 *Please do not spend more than 2-3 hours on this task.*
-
-Stretch goals:
-* Fork the repository and start refactoring
-* Write meaningful tests
-* Replace the SQL repository with an in-memory implementation
 
 ## References
 * [Clean Architecture by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
