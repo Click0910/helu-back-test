@@ -1,4 +1,3 @@
-# user_service/adapters/db/models/user_model.py
 from sqlalchemy import Column, UUID, String, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from uuid import uuid4

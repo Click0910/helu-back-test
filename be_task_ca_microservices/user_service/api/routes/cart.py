@@ -5,6 +5,7 @@ from api.dependencies import get_item_client, get_user_repository
 
 router = APIRouter(prefix="/users/{user_id}/cart")
 
+
 @router.post("/")
 def add_to_cart(
     user_id: UUID,

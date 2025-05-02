@@ -12,7 +12,7 @@ In general, the project is well-structured, we can say that this project is a sm
 the code in general is clean and easy to read, with static typing enforcement that is a good practice.
 
 However, this project is not easy to split into two microservices mainly because the modules are not independent of each other. 
-They are tied and not fully decoupled. User module has a clear dependency on Item module, importing Model and some methods/functions.
+They are tied and not fully decoupled. `User` module has a clear dependency on `Item` module, importing Model and some methods/functions.
 Also, the business logic or core business if you prefer, is not separated from external resources (I explore deeper in the next point)
 
 And taking into account that this is a small monolith, both modules use the same database, so they are not fully decoupled.
@@ -25,8 +25,8 @@ Probably the main characteristic of the clean architecture is that the business 
 meaning that the business logic should not depend on the database, web framework, ORM, connection clients etc.
 
 The business core should be agnostic to the external resources. This helps to keep the business logic clean and easy to test but also
-easy to migrate. For example, we can change the database from Postgres to MongoDB or the web framework from FastAPI to Flask without changing the business logic.
-But in this project we cannot do this easily, because some use_cases are directly dependent on the database and ORM. So, if I want to change postgres to MySQL,
+easy to migrate. For example, we can change the database from `Postgres` to `MongoDB` or the web framework from `FastAPI` to `Flask` without changing the business logic.
+But in this project we cannot do this easily, because some `use_cases` are directly dependent on the database and ORM. So, if I want to change postgres to MySQL,
 this will be very complex and requires a lot of changes in the codebase.
 
 As was mentioned before, in a clean architecture the business logic is agnostic, lives in an isolated core.
@@ -42,12 +42,13 @@ flowchart TD
     D -->|Uses| E[Frameworks/Tools]
 ```
 
-As we see, the use_cases depends on Interfaces (ABS classes in python) and not of concrete implementations.
+As we see, in clean architecture `use_cases` depends on Interfaces (ABS classes in python) and not of concrete implementations.
 
-In this project, use_cases depends on concrete implementations of the interfaces (repositories), which violates the clean architecture principles..
+However, In this particular project, `use_cases` depends on concrete implementations (repositories) instead interfaces 
+(this project doesn't have interfaces) which violates the clean architecture principles.
 
-In conclusion, in this project core business is not fully agnostic, use_cases depends on concrete implementations of the interfaces (repositories) and
-as was mentioned earlier, the modules are not fully decoupled (user depends on item module).
+In conclusion, in this project core business is not fully agnostic, `use_cases` depends on concrete implementations (repositories) and
+as was mentioned earlier, the modules are not fully decoupled (`user` depends on `item` module).
 
 -----------------------
 
@@ -58,8 +59,8 @@ Note: I'm going to assume several things here.
 My plan is the next four main points to refactor the project to stick to the clean architecture and split it into two microservices:
 
     3.1. Separate the business logic from the external resources (databases, web frameworks, ORMs, etc.)
-    3.2. Make the modules independent of each other (decoupled)
-    3.3. Make the dependencies between modules more explicit (shared contracts)
+    3.2. Make the modules/microservices independent of each other (decoupled)
+    3.3. Make the dependencies between modules/microservices more explicit (shared contracts)
     3.4. Every microservice has to have its own database independently of the other microservices for fully decoupling (I explore this latter)
 
 To achieve this I suggest the next structure for the two microservices in a monorepo for simplicity: 
@@ -158,34 +159,35 @@ be_task_ca/
 **Key points:**
 
 * **_Shared contracts_**:
-Even that the modules (now microservices) are decoupled, they need to communicate with each other. User service will need
-to verify the item availability before adding to the cart for example. Shared_contracts is a dependency that needs to be installed
+Even that the modules (now microservices) are decoupled, they need to communicate with each other. `User` service will need
+to verify the `item` availability before adding to the cart for example. `Shared_contracts` is a dependency that needs to be installed
 in both microservices in this case using poetry (the project use poetry but could be trough pip or any other package manager).
-This shared_contracts contains schemas or events (for a message broker and Sagas) and indicates what the microservices can expect from each other,
+This `shared_contracts` contains `schemas` (for API calls and http clients) or `events` (for a message broker and Sagas) and indicates what the microservices can expect from each other,
 is not a concrete implementation, is just a contract. Each microservice that install it, needs to implement the contract.
 This is a good practice because it helps to keep the microservices decoupled and easy to test.
 
 * **_Microservices_**:
-It was implemented two microservices (user_service and item_service) with the same structure.
+It was implemented two microservices (`user_service` and `item_service`) with the same structure.
 
 * **_Core business_**:
-The core business for each microservice are in the folder core/. Here is where the business logic lives, isolated from the external resources.
+The core business for each microservice are in the `core/` folder. Here is where the business logic lives, isolated from the 
+external resources.
 
 * **_Entities_**: 
-represents pure business logic, agnostic, not depends on anything.
+Represents pure business logic, agnostic, not depends on anything.
 
 * **_Use cases_**:
-For use_cases we cant think in a little orchestrator for all the "steps" that are involved in the use case. For example the use case create user
-implies several steps, like validate the data, create the user in the database, send an email, etc. So we can think that use_cases are orchestrators.
-This use_cases depends on interfaces (contracts) and not of concrete implementations. The contracts are in the folder contracts/.
+For use_cases we cant think in a little orchestrator for all the "steps" that are involved in the use case. For example the use case `create user`
+implies several steps, like validate the data, create the user in the database, send an email, etc. So we can think that `use_cases` are orchestrators.
+These `use_cases` depends on interfaces (contracts) and not of concrete implementations. The contracts are in the `contracts/` folder.
 
 * **_Contracts_**:
-They are interfaces (ABs classes in python). In clean architecture is usually called ports (I prefer contracts to avoid confusion).
+They are interfaces (`ABs classes` in python). In clean architecture is usually called ports (I prefer contracts to avoid confusion).
 They are the entry points for the core business. The core business should not depend on concrete implementations, but on contracts.
 It's the way that the inner layer (core business) communicates with the outer layer (external resources).
 
 * **_Adapters_**:
-The external resources like DB, clients etc. Here is implemented the concrete implementations of the contracts (repositories, clients, etc).
+The external resources like DB, clients etc. Here is implemented the concrete implementations of the contracts (repositories, clients, etc.).
 I decided to call adapters instead of infrastructure to avoid confusion with Infra as a code, terraform, etc.
 
 * **_Repositories_**:
@@ -193,19 +195,21 @@ As was mentioned before, the repositories are the concrete implementations of th
 They are the entry point for the core business to access the data.
 
 * **_API_**:
-The API layer is the entry point for the microservice. It should not depend on the core business, but on the contracts.\.
+The API layer is the entry point for the microservice. Here there are the endpoints for example. It should not depend directly on the core business, but on the contracts.
 
 
 ## MessageBroker (could be RabbitMQ) and http client:
 
-As we can see I decided to implement a Saga Pattern but also a Http client for the communication between microservices.
+As we can see I decided to implement a `Saga Pattern` but also a` Http client` for the communication between microservices.
 
 **Why a saga pattern?**
+
 The reason of the saga is that I assume that these two microservices are going to be used in a bigger system, for example use another service
 to process payments, a service to create orders etc. So we need to ensure integrity of the data. If something is wrong, be able to validate which service failed 
 and rollback the changes, gives a compensation etc.
 
 **Why a Http client?**
+
 The reason for the Http client (could be using httpx or request whatever you prefer) is because for a better experience I think a fast 
 and synchron consult for the item availability is better than a message broker.
 
@@ -267,17 +271,17 @@ stateDiagram-v2
 
 ```
 
-But the beauty of this clean architecture is that you can choose the best approach for your needs. At the beginning we can decided only use a http client, but latter migrate to a message broker.
-And you only "disconnect" the client and "connect" the Message broker implemented the interface. 
-Or for example, probably a saga is already implemented and handled by an orchestrator (like AWS Step Functions or Temporal.io),
+But the beauty of this clean architecture is that you can choose the best approach for your needs. At the beginning we can decided only use a `http client`, but latter migrate to a `message broker`.
+And you only "disconnect" the client and "connect" the `Message broker` implementing the interface. 
+Or for example, probably a saga is already implemented and handled by an orchestrator (like `AWS Step Functions` or `Temporal.io`),
 so will not be needed to use this saga pattern. Easily we can remove the message broker and use the orchestrator without modifying the core business.
 
 ## Independent DataBases:
 
 For fully decoupled I decided to use two different databases for each microservice. This is a good practice an ensure fully independency.
-However, I'm aware that for example in clouds (like AWS) the storage is probably the most expensive resource.
+However, I'm aware that in clouds (like `AWS`) the storage is probably the most expensive resource.
 
-In some cases for early startups that have a really limited budget, in order to reduce costs they can opt for use one DB instance (AWS RDS)
+In some cases for early startups that have a really limited budget, in order to reduce costs they can opt for use one DB instance (`AWS RDS`)
 and use it with the different microservices. But this is not a good practice and I don't recommend it.
 
 But if is not an option to have independent databases, we can make a "logical" separation of the databases using schemas or unique prefixes for the tables.
@@ -298,11 +302,11 @@ As Was mentioned in the prev Point, the idea is to make the dependencies between
 I decided to make the architecture for both microservices in a monorepo for simplicity, but in a real world example we can have two different repositories for each microservice.
 
 The shared contracts is a dependency that needs to be installed in both microservices in this case using poetry (the project use poetry but could be trough pip or any other package manager).
-Basically the idea of the shared_contracts is explicit says what the microservices can expect from each other.
+Basically the idea of the `shared_contracts` is explicit says what the microservices can expect from each other.
 
-In this case, user knows what data will fetch from item service and item service knows what data will be sent to user service.
+In this case, `user` knows what data will fetch from `item` service and `item` service knows what data will be sent to `user` service.
 
-Finally, as was mentioned before, the shared_contracts contains schemas or events (for a message broker and Sagas) and each microservice that install it, needs to implement the contract.
+Finally, as was mentioned before, the `shared_contracts` contains schemas (for API calls and HTTP clients) or events (for a message broker and Sagas) and each microservice that install it, needs to implement the contract.
 
 
 ---------------------------------------------
@@ -312,7 +316,7 @@ Finally, as was mentioned before, the shared_contracts contains schemas or event
 This is my proposal for split this project into two microservices and refactor it to stick to the clean architecture.
 The code provided is just the initial skeleton for a  naive implementation for  a simple shop system, but I think is a 
 good starting point to understand the clean architecture and how to implement it in python. The code for sure needs to be completed.
-improved and refactored (for example making it more granular or with static type enforcement for mypy validation), 
+improved and refactored (for example making it more granular or with static type enforcement for mypy validation, add handlers for errors and exceptions etc.), 
 but I think is a good starting point to understand the clean architecture and how to implement it in python.
 
 I mainly focused on the architecture and the design of the microservices.
